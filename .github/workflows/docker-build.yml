@@ -1,0 +1,44 @@
+name: Build and Push Docker Image
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  EC2_HOST: ${{ secrets.EC2_HOST }}
+  EC2_KEY: ${{ secrets.EC2_KEY }}
+
+jobs:
+  deploy-backend:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Decode and save EC2 private key
+        run: |
+          echo "${{ secrets.EC2_KEY }}" | base64 --decode > ec2-private-key.pem
+          chmod 600 ec2-private-key.pem
+
+      - name: SSH into EC2 instance and deploy
+        run: |
+          ssh -o StrictHostKeyChecking=no -i ec2-private-key.pem ec2-user@${EC2_HOST} << 'EOF'
+          cd /home/ec2-user/petWatchBackend
+
+          # Pull latest code
+          git pull origin main
+
+          # Build Docker image
+          sudo docker build -t petWatchBackend .
+
+          # Stop and remove existing Docker container, if any
+          if [ "$(sudo docker ps -q)" ]; then
+            sudo docker stop $(sudo docker ps -q)
+            sudo docker rm $(sudo docker ps -aq)
+          fi
+
+          # Run new Docker container
+          sudo docker run -d -p 3000:3000 petWatchBackend
+          EOF
