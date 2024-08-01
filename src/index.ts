@@ -7,13 +7,7 @@ import { initDatabase } from "./models/coordinateModel";
 const app = express();
 const port = 3000;
 
-app.use(
-  cors({
-    origin: "*",
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  })
-);
+app.use(cors());
 
 app.use(bodyParser.json());
 app.use("/api", coordinateRoutes);
