@@ -31,7 +31,7 @@ jobs:
           git pull origin main
 
           # Build Docker image
-          sudo docker build -t petWatchBackend .
+          sudo docker build -t pet-watch-backend .
 
           # Stop and remove existing Docker container, if any
           if [ "$(sudo docker ps -q)" ]; then
@@ -40,5 +40,5 @@ jobs:
           fi
 
           # Run new Docker container
-          sudo docker run -d -p 3000:3000 petWatchBackend
+          sudo docker run -d -p 3000:3000 pet-watch-backend
           EOF
