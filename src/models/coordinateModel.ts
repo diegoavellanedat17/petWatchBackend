@@ -1,17 +1,5 @@
 import getDatabase from "../database";
 
-export const initDatabase = async () => {
-  const db = await getDatabase();
-  await db.run(`
-    CREATE TABLE IF NOT EXISTS coordinates (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      lat REAL NOT NULL,
-      lon REAL NOT NULL,
-      sendDate TEXT NOT NULL
-    )
-  `);
-};
-
 export const saveCoordinate = async (
   lat: number,
   lon: number,

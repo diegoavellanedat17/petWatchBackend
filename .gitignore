@@ -34,3 +34,6 @@ temp/
 
 # ssl 
 ssl/
+
+# SQLite database
+src/database/*.db
