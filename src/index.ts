@@ -16,17 +16,22 @@ app.use("/api", coordinateRoutes);
 
 // Resolve the correct path to the SSL certificates
 const privateKey = fs.readFileSync(
-  path.join(__dirname, "ssl", "privatekey.pem"),
+  path.join(__dirname, "ssl", "privatekey.pem"), // The private key file
   "utf8"
 );
 const certificate = fs.readFileSync(
-  path.join(__dirname, "ssl", "certificate.pem"),
+  path.join(__dirname, "ssl", "petwatch_tech.crt"), // The main certificate
+  "utf8"
+);
+const ca = fs.readFileSync(
+  path.join(__dirname, "ssl", "petwatch_tech.ca-bundle"), // The CA bundle
   "utf8"
 );
 
 const credentials = {
   key: privateKey,
   cert: certificate,
+  ca: ca,
 };
 
 // Create HTTPS Server
