@@ -1,9 +1,6 @@
 # Use the official Node.js image
 FROM node:18
 
-# Install SQLite3
-RUN apt-get update && apt-get install -y sqlite3
-
 # Set working directory
 WORKDIR /app
 
@@ -18,6 +15,9 @@ COPY . .
 
 # Expose the port the app runs on
 EXPOSE 443
+
+# Define the volume for the SQLite database file
+VOLUME ["/app/database"]
 
 # Start the application
 CMD ["npm", "run", "start"]
