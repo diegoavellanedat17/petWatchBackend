@@ -4,7 +4,8 @@ import {
   getAllPotentialUsers,
 } from "../models/potentialUserModel";
 
-// Controller for the "join us" endpoint
+import { sendConfirmationEmail } from "../utils";
+
 export const joinUs = async (req: Request, res: Response) => {
   const { name, phone, email, type } = req.body;
 
@@ -19,6 +20,7 @@ export const joinUs = async (req: Request, res: Response) => {
 
   try {
     await savePotentialUser(name, phone, email, type);
+    await sendConfirmationEmail(email, name);
     res.status(201).json({ message: "Potential user created successfully" });
   } catch (error) {
     console.error(error);
