@@ -8,8 +8,13 @@ const cognito = new AWS.CognitoIdentityServiceProvider({
   region: "us-east-1",
 });
 
+const sns = new AWS.SNS({
+  region: "us-east-1",
+});
+
 const userPoolId = process.env.COGNITO_USERPOOL_ID;
 const clientId = process.env.COGNITO_CLIENT_ID;
+const snsTopicArn = process.env.SNS_TOPIC_ARN;
 
 export const register = async (req: Request, res: Response) => {
   if (!clientId) {
@@ -37,6 +42,16 @@ export const register = async (req: Request, res: Response) => {
 
   try {
     const data = await cognito.signUp(params).promise();
+    if (snsTopicArn) {
+      await sns
+        .subscribe({
+          TopicArn: snsTopicArn,
+          Protocol: "sms",
+          Endpoint: phoneNumber,
+        })
+        .promise();
+    }
+
     res.status(200).json({ message: "User registered successfully", data });
   } catch (error: any) {
     res.status(400).json({ error: error.message });
