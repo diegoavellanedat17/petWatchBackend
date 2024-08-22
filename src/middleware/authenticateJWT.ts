@@ -23,8 +23,15 @@ const getPublicKeys = async () => {
   return keys;
 };
 
+interface AuthenticatedRequest extends Request {
+  user?: {
+    id: string;
+    [key: string]: any;
+  };
+}
+
 const authenticateJWT = async (
-  req: Request,
+  req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
 ) => {
@@ -53,11 +60,14 @@ const authenticateJWT = async (
       return res.status(401).json({ message: "Invalid token" });
     }
 
-    jwt.verify(token, pem, { algorithms: ["RS256"] }, (err, user) => {
+    jwt.verify(token, pem, { algorithms: ["RS256"] }, (err, decoded: any) => {
       if (err) {
         return res.status(403).json({ message: "Invalid or expired token" });
       }
-      (req as any).user = user;
+      req.user = {
+        id: decoded.sub,
+        ...decoded,
+      };
       next();
     });
   } catch (error) {

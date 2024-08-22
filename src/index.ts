@@ -9,6 +9,7 @@ import { initDatabase } from "./initDatabase";
 import coordinateRoutes from "./routes/coordinateRoutes";
 import potentialUserRoutes from "./routes/potentialUserRoutes";
 import authRoutes from "./routes/authRoutes";
+import petRoutes from "./routes/petRoutes";
 
 dotenv.config();
 const app = express();
@@ -19,6 +20,7 @@ app.use(bodyParser.json());
 app.use(coordinateRoutes);
 app.use(potentialUserRoutes);
 app.use(authRoutes);
+app.use(petRoutes);
 
 // Resolve the correct path to the SSL certificates
 const privateKey = fs.readFileSync(
@@ -40,7 +42,6 @@ const credentials = {
   ca: ca,
 };
 
-// Create HTTPS Server
 const httpsServer = https.createServer(credentials, app);
 
 httpsServer.listen(port, async () => {

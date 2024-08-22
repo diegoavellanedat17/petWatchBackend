@@ -1,20 +1,33 @@
 import dotenv from "dotenv";
 import { Request, Response } from "express";
-import AWS from "aws-sdk";
+import {
+  CognitoIdentityProviderClient,
+  SignUpCommand,
+  ConfirmSignUpCommand,
+  InitiateAuthCommand,
+  GetUserCommand,
+  GlobalSignOutCommand,
+  AuthFlowType,
+} from "@aws-sdk/client-cognito-identity-provider";
+import {
+  SNSClient,
+  SubscribeCommand,
+  PublishCommand,
+} from "@aws-sdk/client-sns";
+import getDatabase from "../database";
 
 dotenv.config();
 
-const cognito = new AWS.CognitoIdentityServiceProvider({
+const cognitoClient = new CognitoIdentityProviderClient({
   region: "us-east-1",
 });
-
-const sns = new AWS.SNS({
-  region: "us-east-1",
-});
+const snsClient = new SNSClient({ region: "us-east-1" });
 
 const userPoolId = process.env.COGNITO_USERPOOL_ID;
 const clientId = process.env.COGNITO_CLIENT_ID;
 const snsTopicArn = process.env.SNS_TOPIC_ARN;
+
+console.log("env variables", { clientId, snsTopicArn });
 
 export const register = async (req: Request, res: Response) => {
   if (!clientId) {
@@ -29,27 +42,46 @@ export const register = async (req: Request, res: Response) => {
     Username: username,
     Password: password,
     UserAttributes: [
-      {
-        Name: "email",
-        Value: email,
-      },
-      {
-        Name: "phone_number",
-        Value: phoneNumber,
-      },
+      { Name: "email", Value: email },
+      { Name: "phone_number", Value: phoneNumber },
     ],
   };
 
   try {
-    const data = await cognito.signUp(params).promise();
+    const command = new SignUpCommand(params);
+    const data = await cognitoClient.send(command);
+    const cognitoId = data.UserSub; // Cognito User ID
+
+    const db = await getDatabase();
+    const dbResponse = await db.run(
+      `INSERT INTO users (cognito_id, username, email, phone) VALUES (?, ?, ?, ?)`,
+      [cognitoId, username, email, phoneNumber]
+    );
+
+    console.log("the database response is ", dbResponse);
+
     if (snsTopicArn) {
-      await sns
-        .subscribe({
-          TopicArn: snsTopicArn,
-          Protocol: "sms",
-          Endpoint: phoneNumber,
-        })
-        .promise();
+      console.log("Subscribing phone number to SNS topic:", {
+        snsTopicArn,
+        phoneNumber,
+      });
+
+      const subscribeCommand = new SubscribeCommand({
+        TopicArn: snsTopicArn,
+        Protocol: "sms",
+        Endpoint: phoneNumber,
+      });
+      const snsResponse = await snsClient.send(subscribeCommand);
+
+      console.log("SNS subscribe successful:", snsResponse);
+
+      const publishCommand = new PublishCommand({
+        PhoneNumber: phoneNumber,
+        Message: "Welcome to our service!",
+      });
+      const snsPublishResponse = await snsClient.send(publishCommand);
+
+      console.log("SNS publish successful:", snsPublishResponse);
     }
 
     res.status(200).json({ message: "User registered successfully", data });
@@ -73,7 +105,8 @@ export const confirmRegistration = async (req: Request, res: Response) => {
   };
 
   try {
-    await cognito.confirmSignUp(params).promise();
+    const command = new ConfirmSignUpCommand(params);
+    await cognitoClient.send(command);
     res.status(200).json({ message: "User confirmed successfully" });
   } catch (error: any) {
     res.status(400).json({ error: error.message });
@@ -88,7 +121,7 @@ export const login = async (req: Request, res: Response) => {
     );
   }
   const params = {
-    AuthFlow: "USER_PASSWORD_AUTH",
+    AuthFlow: AuthFlowType.USER_PASSWORD_AUTH,
     ClientId: clientId,
     AuthParameters: {
       USERNAME: username,
@@ -97,7 +130,8 @@ export const login = async (req: Request, res: Response) => {
   };
 
   try {
-    const data = await cognito.initiateAuth(params).promise();
+    const command = new InitiateAuthCommand(params);
+    const data = await cognitoClient.send(command);
     res.status(200).json({ message: "Login successful", data });
   } catch (error: any) {
     res.status(400).json({ error: error.message });
@@ -111,12 +145,11 @@ export const getCurrentUser = async (req: Request, res: Response) => {
     return res.status(400).json({ error: "Access token is required" });
   }
 
-  const params = {
-    AccessToken: accessToken,
-  };
+  const params = { AccessToken: accessToken };
 
   try {
-    const data = await cognito.getUser(params).promise();
+    const command = new GetUserCommand(params);
+    const data = await cognitoClient.send(command);
     res.status(200).json({ message: "User retrieved successfully", data });
   } catch (error: any) {
     res.status(400).json({ error: error.message });
@@ -127,17 +160,46 @@ export const logout = async (req: Request, res: Response) => {
   const accessToken = req.headers.authorization?.split(" ")[1];
 
   if (!accessToken) {
-    return res.status(400).json({ error: "No access Token" });
+    return res.status(400).json({ error: "No access token" });
   }
 
-  const params = {
-    AccessToken: accessToken,
-  };
+  const params = { AccessToken: accessToken };
 
   try {
-    await cognito.globalSignOut(params).promise();
+    const command = new GlobalSignOutCommand(params);
+    await cognitoClient.send(command);
     res.status(200).json({ message: "Logout successful" });
   } catch (error: any) {
     res.status(400).json({ error: error.message });
+  }
+};
+
+export const deleteUserById = async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  try {
+    const db = await getDatabase();
+
+    const result = await db.run(`DELETE FROM users WHERE id = ?`, [id]);
+
+    if (result.changes === 0) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json({ message: "User deleted successfully" });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const getAllUsers = async (req: Request, res: Response) => {
+  try {
+    const db = await getDatabase();
+
+    const users = await db.all(`SELECT * FROM users`);
+
+    res.status(200).json({ message: "Users retrieved successfully", users });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
   }
 };

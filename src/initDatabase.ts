@@ -11,6 +11,18 @@ const initCoordinatesTable = async (db: any) => {
   `);
 };
 
+const initUsersTable = async (db: any) => {
+  await db.run(`
+    CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      cognito_id TEXT NOT NULL,
+      username TEXT NOT NULL,
+      email TEXT NOT NULL,
+      phone TEXT NOT NULL
+    )
+  `);
+};
+
 const initPotentialUsersTable = async (db: any) => {
   await db.run(`
     CREATE TABLE IF NOT EXISTS potential_users (
@@ -23,11 +35,28 @@ const initPotentialUsersTable = async (db: any) => {
   `);
 };
 
+const initPetsTable = async (db: any) => {
+  await db.run(`
+    CREATE TABLE IF NOT EXISTS pets (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      age INTEGER,
+      type TEXT,
+      breed TEXT,
+      imageUrl TEXT,
+      owner_id INTEGER NOT NULL,
+      FOREIGN KEY (owner_id) REFERENCES users(id)
+    )
+  `);
+};
+
 export const initDatabase = async () => {
   const db = await getDatabase();
 
   await initCoordinatesTable(db);
   await initPotentialUsersTable(db);
+  await initUsersTable(db);
+  await initPetsTable(db);
 
   console.log("Database initialized successfully.");
 };

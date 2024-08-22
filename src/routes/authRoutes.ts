@@ -5,8 +5,11 @@ import {
   login,
   getCurrentUser,
   logout,
+  deleteUserById,
+  getAllUsers,
 } from "../controllers/authController";
 import authenticateJWT from "../middleware/authenticateJWT";
+import basicAuth from "../middleware/basicAuth";
 
 const router = express.Router();
 
@@ -16,5 +19,9 @@ router.post("/login", login);
 
 router.get("/get-current-user", authenticateJWT, getCurrentUser);
 router.post("/logout", authenticateJWT, logout);
+
+// Admin Features
+router.delete("/users/:id", basicAuth, deleteUserById);
+router.get("/users", basicAuth, getAllUsers);
 
 export default router;
