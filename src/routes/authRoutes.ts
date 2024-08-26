@@ -7,6 +7,7 @@ import {
   logout,
   deleteUserById,
   getAllUsers,
+  getUserByCognitoId,
 } from "../controllers/authController";
 import authenticateJWT from "../middleware/authenticateJWT";
 import basicAuth from "../middleware/basicAuth";
@@ -19,6 +20,7 @@ router.post("/login", login);
 
 router.get("/get-current-user", authenticateJWT, getCurrentUser);
 router.post("/logout", authenticateJWT, logout);
+router.get("/users/cognito/:cognitoId", authenticateJWT, getUserByCognitoId);
 
 // Admin Features
 router.delete("/users/:id", basicAuth, deleteUserById);

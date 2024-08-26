@@ -203,3 +203,23 @@ export const getAllUsers = async (req: Request, res: Response) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+export const getUserByCognitoId = async (req: Request, res: Response) => {
+  const { cognitoId } = req.params;
+
+  try {
+    const db = await getDatabase();
+
+    const user = await db.get(`SELECT * FROM users WHERE cognito_id = ?`, [
+      cognitoId,
+    ]);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json({ message: "User retrieved successfully", user });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};
