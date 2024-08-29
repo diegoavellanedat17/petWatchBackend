@@ -15,12 +15,11 @@ interface AuthenticatedRequest extends Request {
 
 export const createPet = async (req: AuthenticatedRequest, res: Response) => {
   const { name, age, type, breed } = req.body;
-  const userId = req.user?.id;
 
-  if (!userId) {
+  if (!req.user) {
     return res.status(401).json({ error: "User not authenticated" });
   }
-
+  const userId = req.user.id;
   try {
     const petId = await createPetInDB(name, age, type, breed, userId);
     res.status(201).json({ message: "Pet created successfully", petId });
@@ -29,12 +28,11 @@ export const createPet = async (req: AuthenticatedRequest, res: Response) => {
   }
 };
 
-export const getUserPets = async (req: Request, res: Response) => {
-  const userId = (req as any).user?.id;
-
-  if (!userId) {
+export const getUserPets = async (req: AuthenticatedRequest, res: Response) => {
+  if (!req.user) {
     return res.status(401).json({ error: "User not authenticated" });
   }
+  const userId = req.user.id;
 
   try {
     const pets = await getUserPetsFromDB(userId);

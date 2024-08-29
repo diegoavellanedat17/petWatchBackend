@@ -11,10 +11,10 @@ import basicAuth from "../middleware/basicAuth";
 
 const router = express.Router();
 
-router.post("/users/:userId/pets", authenticateJWT, createPet);
-router.get("/users/:userId/pets", authenticateJWT, getUserPets);
-router.get("/pets", basicAuth, getAllPets);
-router.put("/pets/:petId", authenticateJWT, updatePet);
-router.delete("/pets/:petId", authenticateJWT, deletePet);
+router.post("/pet", authenticateJWT, createPet);
+router.get("/pets", authenticateJWT, getUserPets);
+router.get("/allPets", basicAuth, getAllPets);
+router.put("/pet", authenticateJWT, updatePet);
+router.delete("/pet", authenticateJWT, deletePet);
 
 export default router;

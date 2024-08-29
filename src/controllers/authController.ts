@@ -15,6 +15,7 @@ import {
   PublishCommand,
 } from "@aws-sdk/client-sns";
 import getDatabase from "../database";
+import { getUserById } from "../models/userModel";
 
 dotenv.config();
 
@@ -39,7 +40,7 @@ export const register = async (req: Request, res: Response) => {
 
   const params = {
     ClientId: clientId,
-    Username: username,
+    Username: email,
     Password: password,
     UserAttributes: [
       { Name: "email", Value: email },
@@ -150,7 +151,16 @@ export const getCurrentUser = async (req: Request, res: Response) => {
   try {
     const command = new GetUserCommand(params);
     const data = await cognitoClient.send(command);
-    res.status(200).json({ message: "User retrieved successfully", data });
+    const cognitoId = data.Username;
+
+    if (!cognitoId) {
+      res.status(400).json({ error: "No userId" });
+    }
+
+    const userData = await getUserById(cognitoId!);
+    res
+      .status(200)
+      .json({ message: "User retrieved successfully", data: userData });
   } catch (error: any) {
     res.status(400).json({ error: error.message });
   }
@@ -176,6 +186,7 @@ export const logout = async (req: Request, res: Response) => {
 
 export const deleteUserById = async (req: Request, res: Response) => {
   const { id } = req.params;
+  console.log("the id is", id);
 
   try {
     const db = await getDatabase();
@@ -210,9 +221,7 @@ export const getUserByCognitoId = async (req: Request, res: Response) => {
   try {
     const db = await getDatabase();
 
-    const user = await db.get(`SELECT * FROM users WHERE cognito_id = ?`, [
-      cognitoId,
-    ]);
+    const user = await getUserById(cognitoId);
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });

@@ -19,7 +19,7 @@ export const createPetInDB = async (
   return petId;
 };
 
-export const getUserPetsFromDB = async (ownerId: number) => {
+export const getUserPetsFromDB = async (ownerId: string) => {
   const db = await getDatabase();
   const pets = await db.all(`SELECT * FROM pets WHERE owner_id = ?`, [ownerId]);
 
