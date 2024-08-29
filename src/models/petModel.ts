@@ -57,3 +57,10 @@ export const deletePetFromDB = async (petId: string) => {
 
   return true;
 };
+
+export const getPetById = async (petId: string) => {
+  const db = await getDatabase();
+  const pet = await db.get(`SELECT * FROM pets WHERE id = ?`, [petId]);
+
+  return pet;
+};

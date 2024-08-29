@@ -5,6 +5,7 @@ import {
   getAllPetsFromDB,
   updatePetInDB,
   deletePetFromDB,
+  getPetById,
 } from "../models/petModel";
 
 interface AuthenticatedRequest extends Request {
@@ -51,16 +52,29 @@ export const getAllPets = async (req: Request, res: Response) => {
   }
 };
 
-export const updatePet = async (req: Request, res: Response) => {
-  const { petId } = req.params;
+export const updatePet = async (req: AuthenticatedRequest, res: Response) => {
   const { name, age, type, breed, imageUrl } = req.body;
-  const userId = (req as any).user?.id;
+  const { petId } = req.params;
 
-  if (!userId) {
+  if (!req.user) {
     return res.status(401).json({ error: "User not authenticated" });
   }
 
+  const userId = req.user.id;
+
   try {
+    const pet = await getPetById(petId);
+
+    if (!pet) {
+      return res.status(404).json({ message: "Pet not found" });
+    }
+
+    if (pet.owner_id !== userId) {
+      return res
+        .status(403)
+        .json({ message: "User not authorized to update this pet" });
+    }
+
     const success = await updatePetInDB(
       petId,
       name,
@@ -69,8 +83,12 @@ export const updatePet = async (req: Request, res: Response) => {
       breed,
       imageUrl
     );
+
     if (success) {
-      res.status(200).json({ message: "Pet updated successfully" });
+      const updatedPet = await getPetById(petId);
+      res
+        .status(200)
+        .json({ message: "Pet updated successfully", pet: updatedPet });
     } else {
       res.status(404).json({ message: "Pet not found" });
     }
@@ -78,21 +96,62 @@ export const updatePet = async (req: Request, res: Response) => {
     res.status(500).json({ error: error.message });
   }
 };
-export const deletePet = async (req: Request, res: Response) => {
-  const { petId } = req.params;
-  const userId = (req as any).user?.id;
 
-  if (!userId) {
+export const deletePet = async (req: AuthenticatedRequest, res: Response) => {
+  const { petId } = req.params;
+
+  if (!req.user) {
     return res.status(401).json({ error: "User not authenticated" });
   }
 
+  const userId = req.user.id;
+
   try {
+    const pet = await getPetById(petId);
+
+    if (!pet) {
+      return res.status(404).json({ message: "Pet not found" });
+    }
+
+    if (pet.owner_id !== userId) {
+      return res
+        .status(403)
+        .json({ message: "User not authorized to delete this pet" });
+    }
+
     const success = await deletePetFromDB(petId);
     if (success) {
       res.status(200).json({ message: "Pet deleted successfully" });
     } else {
       res.status(404).json({ message: "Pet not found" });
     }
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const getPet = async (req: AuthenticatedRequest, res: Response) => {
+  const { petId } = req.params;
+
+  if (!req.user) {
+    return res.status(401).json({ error: "User not authenticated" });
+  }
+
+  const userId = req.user.id;
+
+  try {
+    const pet = await getPetById(petId);
+
+    if (!pet) {
+      return res.status(404).json({ message: "Pet not found" });
+    }
+
+    if (pet.owner_id !== userId) {
+      return res
+        .status(403)
+        .json({ message: "User not authorized to get this pet" });
+    }
+    res.status(200).json({ message: "Pet retrieved successfully", pet });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
