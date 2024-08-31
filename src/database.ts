@@ -1,21 +1,19 @@
-import sqlite3 from "sqlite3";
-import { open } from "sqlite";
-import fs from "fs";
-import path from "path";
+import mongoose from "mongoose";
+import dotenv from "dotenv";
 
-// Ensure the database directory exists
-const dbDirectory = path.join(__dirname, "database");
-if (!fs.existsSync(dbDirectory)) {
-  fs.mkdirSync(dbDirectory, { recursive: true });
-}
+dotenv.config();
 
-const dbPromise = open({
-  filename: path.join(dbDirectory, "database.db"),
-  driver: sqlite3.Database,
-});
-
-const getDatabase = async () => {
-  return dbPromise;
+const connectDB = async () => {
+  try {
+    console.log(process.env.MONGO_URI);
+    await mongoose.connect(
+      process.env.MONGO_URI || "mongodb://localhost:27017/petwatch"
+    );
+    console.log("MongoDB connected successfully");
+  } catch (error: any) {
+    console.error("MongoDB connection failed:", error.message);
+    process.exit(1);
+  }
 };
 
-export default getDatabase;
+export default connectDB;

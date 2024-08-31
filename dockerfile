@@ -16,8 +16,5 @@ COPY . .
 # Expose the port the app runs on
 EXPOSE 443
 
-# Define the volume for the SQLite database file
-VOLUME ["/app/database"]
-
 # Start the application
 CMD ["npm", "run", "start"]

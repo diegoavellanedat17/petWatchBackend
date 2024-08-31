@@ -1,12 +1,13 @@
 import { Router } from "express";
 import {
   createCoordinate,
-  fetchAllCoordinates,
+  fetchPetCoordinates,
 } from "../controllers/coordinateController";
-import basicAuth from "../middleware/basicAuth";
+import authenticateJWT from "../middleware/authenticateJWT";
+
 const router = Router();
 
-router.post("/coordinates", basicAuth, createCoordinate);
-router.get("/coordinates", basicAuth, fetchAllCoordinates);
+router.post("/coordinates/:petId", authenticateJWT, createCoordinate);
+router.get("/coordinates/:petId", authenticateJWT, fetchPetCoordinates);
 
 export default router;

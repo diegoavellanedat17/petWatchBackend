@@ -1,16 +1,17 @@
-import getDatabase from "../database";
+import mongoose, { Schema, Document } from "mongoose";
 
-export const getUserById = async (cognitoId: string) => {
-  const db = await getDatabase();
+export interface IUser extends Document {
+  cognito_id: string;
+  username: string;
+  email: string;
+  phone: string;
+}
 
-  const user = await db.get(`SELECT * FROM users WHERE cognito_id = ?`, [
-    cognitoId,
-  ]);
+const UserSchema: Schema = new Schema({
+  cognito_id: { type: String, required: true, unique: true },
+  username: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
+  phone: { type: String, required: true },
+});
 
-  if (!user) {
-    console.log("User not found");
-    return;
-  }
-
-  return user;
-};
+export default mongoose.model<IUser>("User", UserSchema);

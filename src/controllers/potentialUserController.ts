@@ -2,9 +2,8 @@ import { Request, Response } from "express";
 import {
   savePotentialUser,
   getAllPotentialUsers,
-} from "../models/potentialUserModel";
+} from "../services/potentialUserService";
 
-// Controller for the "join us" endpoint
 export const joinUs = async (req: Request, res: Response) => {
   const { name, phone, email, type } = req.body;
 
@@ -26,7 +25,6 @@ export const joinUs = async (req: Request, res: Response) => {
   }
 };
 
-// Controller for getting all potential users
 export const getPotentialUsers = async (req: Request, res: Response) => {
   try {
     const users = await getAllPotentialUsers();

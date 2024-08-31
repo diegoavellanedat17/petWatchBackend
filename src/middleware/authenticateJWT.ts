@@ -23,7 +23,7 @@ const getPublicKeys = async () => {
   return keys;
 };
 
-interface AuthenticatedRequest extends Request {
+export interface AuthenticatedRequest extends Request {
   user?: {
     id: string;
     [key: string]: any;

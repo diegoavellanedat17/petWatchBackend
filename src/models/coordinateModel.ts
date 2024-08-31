@@ -1,19 +1,17 @@
-import getDatabase from "../database";
+import mongoose, { Schema, Document } from "mongoose";
 
-export const saveCoordinate = async (
-  lat: number,
-  lon: number,
-  sendDate: string
-) => {
-  const db = await getDatabase();
-  await db.run(
-    `INSERT INTO coordinates (lat, lon, sendDate) VALUES (?, ?, ?)`,
-    [lat, lon, sendDate]
-  );
-};
+export interface ICoordinate extends Document {
+  lat: number;
+  lon: number;
+  sendDate: string;
+  petId: string;
+}
 
-export const getAllCoordinates = async () => {
-  const db = await getDatabase();
-  const result = await db.all(`SELECT * FROM coordinates`);
-  return result;
-};
+const CoordinateSchema: Schema = new Schema({
+  lat: { type: Number, required: true },
+  lon: { type: Number, required: true },
+  sendDate: { type: String, required: true },
+  petId: { type: String, required: true },
+});
+
+export default mongoose.model<ICoordinate>("Coordinate", CoordinateSchema);

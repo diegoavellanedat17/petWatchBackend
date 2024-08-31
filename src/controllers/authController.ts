@@ -14,8 +14,12 @@ import {
   SubscribeCommand,
   PublishCommand,
 } from "@aws-sdk/client-sns";
-import getDatabase from "../database";
-import { getUserById } from "../models/userModel";
+import {
+  createUser,
+  getUserByCognitoId,
+  deleteUserById,
+  getAllUsers,
+} from "../services/userService";
 
 dotenv.config();
 
@@ -27,8 +31,6 @@ const snsClient = new SNSClient({ region: "us-east-1" });
 const userPoolId = process.env.COGNITO_USERPOOL_ID;
 const clientId = process.env.COGNITO_CLIENT_ID;
 const snsTopicArn = process.env.SNS_TOPIC_ARN;
-
-console.log("env variables", { clientId, snsTopicArn });
 
 export const register = async (req: Request, res: Response) => {
   if (!clientId) {
@@ -51,38 +53,23 @@ export const register = async (req: Request, res: Response) => {
   try {
     const command = new SignUpCommand(params);
     const data = await cognitoClient.send(command);
-    const cognitoId = data.UserSub; // Cognito User ID
+    const cognitoId = data.UserSub;
 
-    const db = await getDatabase();
-    const dbResponse = await db.run(
-      `INSERT INTO users (cognito_id, username, email, phone) VALUES (?, ?, ?, ?)`,
-      [cognitoId, username, email, phoneNumber]
-    );
-
-    console.log("the database response is ", dbResponse);
+    const newUser = await createUser(cognitoId!, username, email, phoneNumber);
 
     if (snsTopicArn) {
-      console.log("Subscribing phone number to SNS topic:", {
-        snsTopicArn,
-        phoneNumber,
-      });
-
       const subscribeCommand = new SubscribeCommand({
         TopicArn: snsTopicArn,
         Protocol: "sms",
         Endpoint: phoneNumber,
       });
-      const snsResponse = await snsClient.send(subscribeCommand);
-
-      console.log("SNS subscribe successful:", snsResponse);
+      await snsClient.send(subscribeCommand);
 
       const publishCommand = new PublishCommand({
         PhoneNumber: phoneNumber,
         Message: "Welcome to our service!",
       });
-      const snsPublishResponse = await snsClient.send(publishCommand);
-
-      console.log("SNS publish successful:", snsPublishResponse);
+      await snsClient.send(publishCommand);
     }
 
     res.status(200).json({ message: "User registered successfully", data });
@@ -154,10 +141,14 @@ export const getCurrentUser = async (req: Request, res: Response) => {
     const cognitoId = data.Username;
 
     if (!cognitoId) {
-      res.status(400).json({ error: "No userId" });
+      return res.status(400).json({ error: "No userId" });
     }
 
-    const userData = await getUserById(cognitoId!);
+    const userData = await getUserByCognitoId(cognitoId!);
+    if (!userData) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
     res
       .status(200)
       .json({ message: "User retrieved successfully", data: userData });
@@ -184,16 +175,12 @@ export const logout = async (req: Request, res: Response) => {
   }
 };
 
-export const deleteUserById = async (req: Request, res: Response) => {
+export const deleteUserByIdController = async (req: Request, res: Response) => {
   const { id } = req.params;
-  console.log("the id is", id);
 
   try {
-    const db = await getDatabase();
-
-    const result = await db.run(`DELETE FROM users WHERE id = ?`, [id]);
-
-    if (result.changes === 0) {
+    const success = await deleteUserById(id);
+    if (!success) {
       return res.status(404).json({ message: "User not found" });
     }
 
@@ -203,26 +190,23 @@ export const deleteUserById = async (req: Request, res: Response) => {
   }
 };
 
-export const getAllUsers = async (req: Request, res: Response) => {
+export const getAllUsersController = async (req: Request, res: Response) => {
   try {
-    const db = await getDatabase();
-
-    const users = await db.all(`SELECT * FROM users`);
-
+    const users = await getAllUsers();
     res.status(200).json({ message: "Users retrieved successfully", users });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
 };
 
-export const getUserByCognitoId = async (req: Request, res: Response) => {
+export const getUserByCognitoIdController = async (
+  req: Request,
+  res: Response
+) => {
   const { cognitoId } = req.params;
 
   try {
-    const db = await getDatabase();
-
-    const user = await getUserById(cognitoId);
-
+    const user = await getUserByCognitoId(cognitoId);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
