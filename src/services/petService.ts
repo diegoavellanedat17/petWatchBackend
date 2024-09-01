@@ -26,5 +26,5 @@ export const deletePet = async (petId: string): Promise<boolean> => {
 };
 
 export const getPetById = async (petId: string): Promise<IPet | null> => {
-  return await Pet.findById(petId).populate("owner_id");
+  return await Pet.findById(petId).exec();
 };
