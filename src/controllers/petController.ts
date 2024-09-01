@@ -15,7 +15,7 @@ export const createPetController = async (
   res: Response
 ) => {
   try {
-    const { name, age, type, breed, imageUrl } = req.body;
+    const { name, bornDate, type, breed, imageUrl } = req.body;
     if (!req.user) {
       return res.status(401).json({ error: "User not authenticated" });
     }
@@ -23,7 +23,7 @@ export const createPetController = async (
 
     const newPet = await createPet({
       name,
-      age,
+      bornDate,
       type,
       breed,
       imageUrl,
@@ -95,7 +95,7 @@ export const updatePetController = async (
 ) => {
   try {
     const { petId } = req.params;
-    const { name, age, type, breed, imageUrl } = req.body;
+    const { name, bornDate, type, breed, imageUrl } = req.body;
 
     if (!req.user) {
       return res.status(401).json({ error: "User not authenticated" });
@@ -113,7 +113,7 @@ export const updatePetController = async (
 
     const updatedPet = await updatePet(petId, {
       name,
-      age,
+      bornDate,
       type,
       breed,
       imageUrl,

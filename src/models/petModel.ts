@@ -2,7 +2,7 @@ import mongoose, { Schema, Document } from "mongoose";
 
 export interface IPet extends Document {
   name: string;
-  age?: number;
+  bornDate?: Date;
   type?: string;
   breed?: string;
   imageUrl?: string;
@@ -13,7 +13,7 @@ export interface IPet extends Document {
 const PetSchema: Schema = new Schema(
   {
     name: { type: String, required: true },
-    age: { type: Number },
+    bornDate: { type: Date },
     type: { type: String },
     breed: { type: String, required: true },
     imageUrl: { type: String },
