@@ -6,6 +6,7 @@ import {
   updatePetController,
   deletePetController,
   getPetByIdController,
+  getPetAppByIdController,
 } from "../controllers/petController";
 import authenticateJWT from "../middleware/authenticateJWT";
 import basicAuth from "../middleware/basicAuth";
@@ -18,5 +19,8 @@ router.get("/allPets", basicAuth, getAllPetsController);
 router.put("/pet/:petId", authenticateJWT, updatePetController);
 router.delete("/pet/:petId", authenticateJWT, deletePetController);
 router.get("/pet/:petId", authenticateJWT, getPetByIdController);
+
+//for the app
+router.get("/pet/app/:petId", basicAuth, getPetAppByIdController);
 
 export default router;

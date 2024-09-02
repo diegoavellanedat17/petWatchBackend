@@ -61,6 +61,24 @@ export const getPetByIdController = async (
   }
 };
 
+export const getPetAppByIdController = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
+  try {
+    const { petId } = req.params;
+
+    const pet = await getPetById(petId);
+    if (!pet) {
+      return res.status(404).json({ error: "Pet not found" });
+    }
+
+    res.status(200).json(pet);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 // Controller to get all pets for a specific user
 export const getUserPetsController = async (
   req: AuthenticatedRequest,
