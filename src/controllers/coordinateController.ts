@@ -49,6 +49,35 @@ export const createCoordinate = async (
   }
 };
 
+export const createAppCoordinate = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
+  const { lat, lon, sendDate } = req.body;
+  const { petId } = req.params;
+
+  if (
+    typeof lat !== "number" ||
+    typeof lon !== "number" ||
+    typeof sendDate !== "string" ||
+    !petId
+  ) {
+    return res.status(400).json({ error: "Invalid input" });
+  }
+
+  try {
+    const pet = await getPetById(petId);
+
+    if (!pet) {
+      return res.status(404).json({ error: "Pet not found" });
+    }
+    await saveCoordinate(lat, lon, sendDate, petId);
+    res.status(201).json({ message: "Coordinate saved successfully" });
+  } catch (error) {
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
 export const fetchPetCoordinates = async (
   req: AuthenticatedRequest,
   res: Response
