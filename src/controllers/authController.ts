@@ -64,12 +64,6 @@ export const register = async (req: Request, res: Response) => {
         Endpoint: phoneNumber,
       });
       await snsClient.send(subscribeCommand);
-
-      const publishCommand = new PublishCommand({
-        PhoneNumber: phoneNumber,
-        Message: "Welcome to our service!",
-      });
-      await snsClient.send(publishCommand);
     }
 
     res.status(200).json({ message: "User registered successfully", data });
